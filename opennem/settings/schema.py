@@ -1,10 +1,11 @@
 from typing import Optional
 
-from pydantic import BaseSettings
+from pydantic import Field
+from pydantic_settings import BaseSettings
 from pydantic.class_validators import validator
 
 SUPPORTED_LOG_LEVEL_NAMES = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
-
+ENDPOINT = "https://api.opennem.org.au"
 
 class OpennemSettings(BaseSettings):
     """
@@ -19,7 +20,7 @@ class OpennemSettings(BaseSettings):
 
     env: str = "development"
 
-    endpoint: Optional[str]
+    endpoint: Optional[str] = Field(description="OpenNEM API endpoint", default=ENDPOINT)
 
     log_level: str = "DEBUG"
 

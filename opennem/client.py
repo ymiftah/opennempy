@@ -9,7 +9,10 @@ from urllib.parse import ParseResult, urlparse
 from opennem.core.endpoint import EndpointType, get_opennem_endpoint
 from opennem.core.environment import get_environment
 from opennem.schema.dataset import OpennemDataSet
-from opennem.schema.network import FueltechSchema, NetworkRegionSchema, NetworkSchema
+from opennem.schema.network import (
+    NetworkSchema, NetworkRegionSchema, FueltechSchema, LocationSchema
+)
+from opennem.schema.station import StationSchema, FacilitySchema
 from opennem.settings import settings
 from opennem.utils.http import http
 
@@ -112,6 +115,47 @@ class OpenNEMClient(object):
 
         return resp_objects
 
+    def facilities(self) -> List[FacilitySchema]:
+        """Return fueltechs."""
+        resp = self._get("facility")
+
+        resp_objects = [FacilitySchema(**i) for i in resp]
+
+        return resp_objects
+    
+    def facility(self, facility_code: str) -> FacilitySchema:
+        """Return facility."""
+        resp = self._get(f"facility/{facility_code}")
+
+        resp_object = FacilitySchema(**resp)
+
+        return resp_object
+    
+    def locations(self):
+        """Return locations."""
+        resp = self._get(f"locations")
+        # "facility/TESLA_GERALDTON_G1"
+        resp_object = [LocationSchema(**i) for i in resp]
+        return resp_object
+    
+    def location(self, id: int):
+        """Return location."""
+        resp = self._get(f"location/{id}")
+        resp_object = LocationSchema(**resp)
+        return resp_object
+    
+    def stations(self):
+        """Return station."""
+        resp = self._get(f"station")
+        resp_object = [StationSchema(**i) for i in resp["data"]]
+        return resp_object
+    
+    def station(self, network_id: int, station_code: str, only_generators=True):
+        """Return station."""
+        resp = self._get(f"station/{network_id}/{station_code}", params={"only_generators": only_generators})
+        resp_object = StationSchema(**resp)
+        return resp_object
+
     def power_network_fueltech(self, network_id: str, network_region_code: str) -> OpennemDataSet:
         """
         Get last 7 days of power generation per fueltech.
@@ -170,3 +214,11 @@ class OpenNEMClient(object):
         resp_object = OpennemDataSet(**resp)
 
         return resp_object
+
+def main():
+    client = OpenNEMClient()
+    networks = client.stations()
+    return networks
+
+if __name__ == "__main__":
+    main()
