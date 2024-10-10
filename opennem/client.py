@@ -3,6 +3,7 @@
 Define the primary API client class for accessing API and data methods of OpenNEM.
 """
 import logging
+from functools import lru_cache
 from typing import Dict, List, Optional, Union
 from urllib.parse import ParseResult, urlparse
 
@@ -69,6 +70,7 @@ class OpenNEMClient(object):
         """
         return self._base_url_parsed._replace(path=endpoint).geturl()
 
+    @lru_cache
     def _get(self, endpoint: str, params: Optional[Dict] = None) -> Union[Dict, List]:
         """
         Perform an GET request to an endpoint optionally with parameters for querystring.
@@ -133,7 +135,7 @@ class OpenNEMClient(object):
     
     def locations(self):
         """Return locations."""
-        resp = self._get(f"locations")
+        resp = self._get("locations")
         # "facility/TESLA_GERALDTON_G1"
         resp_object = [LocationSchema(**i) for i in resp]
         return resp_object
@@ -146,7 +148,7 @@ class OpenNEMClient(object):
     
     def stations(self):
         """Return station."""
-        resp = self._get(f"station")
+        resp = self._get("station")
         resp_object = [StationSchema(**i) for i in resp["data"]]
         return resp_object
     
@@ -169,6 +171,27 @@ class OpenNEMClient(object):
         :rtype: OpennemDataSet
         """
         resp = self._get(f"/stats/power/network/fueltech/{network_id}/{network_region_code}")
+
+        if not isinstance(resp, Dict):
+            raise Exception("Bad response type")
+
+        resp_object = OpennemDataSet(**resp)
+
+        return resp_object
+
+    def power_station(self, network_id: str, station_code: str) -> OpennemDataSet:
+        """
+        Get last 7 days of power generation for the station.
+
+        :param network_id: The network code
+        :type network_id: str
+        :param station_code: The station code
+        :type station_code: str
+        :raises Exception: Base response
+        :return: The data set in OpenNEM Data Set format.
+        :rtype: OpennemDataSet
+        """
+        resp = self._get(f"/stats/power/station/{network_id}/{station_code}")
 
         if not isinstance(resp, Dict):
             raise Exception("Bad response type")

@@ -8,7 +8,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import List, Optional, Tuple
 
-from pydantic import validator
+from pydantic import field_validator
 
 from opennem.core.offsets import delta_from_human_interval
 from opennem.schema.core import BaseConfig
@@ -44,7 +44,7 @@ class OpennemDataHistory(BaseConfig):
     data: List
 
     # validators
-    _data_valid = validator("data", allow_reuse=True, pre=True)(data_validate)
+    _data_valid = field_validator("data")(data_validate)
 
     def values(self) -> List[Tuple[datetime, float]]:
         """[summary]
@@ -81,49 +81,47 @@ class OpennemData(BaseConfig):
     :type BaseConfig: [type]
     """
 
-    id: Optional[str]
-    type: Optional[str]
-    fuel_tech: Optional[str]
-
-    network: Optional[str]
-    region: Optional[str]
+    id: Optional[str] = None
+    type: Optional[str] = None
+    code: Optional[str] = None
+    network: Optional[str] = None
     data_type: str
-    code: Optional[str]
     units: str
 
-    interval: Optional[TimeInterval]
-    period: Optional[TimePeriod]
+    fuel_tech: Optional[str] = None
+
+    region: Optional[str] = None
+
+    interval: Optional[TimeInterval] = None
+    period: Optional[TimePeriod] = None
 
     history: OpennemDataHistory
-    forecast: Optional[OpennemDataHistory]
+    forecast: Optional[OpennemDataHistory] = None
 
-    x_capacity_at_present: Optional[float]
+    x_capacity_at_present: Optional[float] = None
 
 
 class OpennemDataSet(BaseConfig):
-    type: Optional[str]
-    version: Optional[str]
-    network: Optional[str]
-    code: Optional[str]
-    region: Optional[str]
-    created_at: Optional[datetime]
+    type: Optional[str] = None
+    version: Optional[str] = None
+    network: Optional[str] = None
+    code: Optional[str] = None
+    region: Optional[str] = None
+    created_at: Optional[datetime] = None
+    feature_flags: Optional[List[str]] = None
+    messages: Optional[List[str]] = None
 
     data: List[OpennemData]
 
     def get_id(self, id: str) -> Optional[OpennemData]:
-        _ds = list(filter(lambda x: x.id == id, self.data))
-
-        if len(_ds) < 1:
-            return None
-
-        return _ds.pop()
+        return next(filter(lambda x: x.id == id, self.data), None)
 
     # validators
-    _version_fromstr = validator("created_at", allow_reuse=True, pre=True)(
+    _version_fromstr = field_validator("created_at")(
         optionally_parse_string_datetime
     )
 
-    _created_at_trim = validator("created_at", allow_reuse=True, pre=True)(chop_microseconds)
+    _created_at_trim = field_validator("created_at")(chop_microseconds)
 
     def get_by_stat_type(self, stat_type: StatType) -> OpennemDataSet:
         em = self.copy()
